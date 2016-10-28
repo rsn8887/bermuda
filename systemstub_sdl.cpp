@@ -118,7 +118,11 @@ void SystemStub_SDL::init(const char *title, int w, int h) {
 
 	_videoW = _videoH = 0;
 
+#ifdef PS3
+	_fullScreenDisplay = true;
+#else
 	_fullScreenDisplay = false;
+#endif
 	setFullscreen(_fullScreenDisplay);
 	_soundSampleRate = 0;
 
@@ -369,6 +373,7 @@ void SystemStub_SDL::handleEvent(const SDL_Event &ev, bool &paused) {
 		}
 		break;
 #endif
+#ifndef PS3
 	case SDL_KEYUP:
 		switch (ev.key.keysym.sym) {
 		case SDLK_LEFT:
@@ -488,6 +493,92 @@ void SystemStub_SDL::handleEvent(const SDL_Event &ev, bool &paused) {
 		_pi.mouseX = ev.motion.x;
 		_pi.mouseY = ev.motion.y;
 		break;
+#else
+	case SDL_KEYUP:
+	switch (ev.key.keysym.sym) {
+		case SDLK_LEFT:
+			_pi.dirMask &= ~PlayerInput::DIR_LEFT;
+			break;
+		case SDLK_RIGHT:
+			_pi.dirMask &= ~PlayerInput::DIR_RIGHT;
+			break;
+		case SDLK_UP:
+			_pi.dirMask &= ~PlayerInput::DIR_UP;
+			break;
+		case SDLK_DOWN:
+			_pi.dirMask &= ~PlayerInput::DIR_DOWN;
+			break;
+		case SDLK_RETURN: // Cross
+			_pi.enter = false;
+			break;
+		case SDLK_SPACE: // Square
+			_pi.space = false;
+			break;
+		case SDLK_TAB: // Circle
+			_pi.shift = false;
+			break;
+		case SDLK_END: // Triangle
+			_pi.tab = false;
+			break;
+		case SDLK_PAUSE: // Start
+			_pi.ctrl = false;
+			break;
+		case SDLK_ESCAPE: // Select
+			_pi.escape = false;
+			break;
+		default:
+			break;
+		}
+		break;
+	case SDL_KEYDOWN:
+	switch (ev.key.keysym.sym) {
+		case SDLK_LEFT:
+			_pi.dirMask |= PlayerInput::DIR_LEFT;
+			break;
+		case SDLK_RIGHT:
+			_pi.dirMask |= PlayerInput::DIR_RIGHT;
+			break;
+		case SDLK_UP:
+			_pi.dirMask |= PlayerInput::DIR_UP;
+			break;
+		case SDLK_DOWN:
+			_pi.dirMask |= PlayerInput::DIR_DOWN;
+			break;
+		case SDLK_RETURN: // Cross
+			_pi.enter = true;
+			break;
+		case SDLK_SPACE: // Square
+			_pi.space = true;
+			break;
+		case SDLK_TAB: // Circle
+			_pi.shift = true;
+			break;
+		case SDLK_END: // Triangle
+			_pi.tab = true;
+			break;
+		case SDLK_PAUSE: // Start
+			_pi.ctrl = true;
+			break;
+		case SDLK_ESCAPE: // Select
+			_pi.escape = true;
+			break;
+		case SDLK_s: // R1
+			_pi.save = true;
+			break;
+		case SDLK_l: // L1
+			_pi.load = true;
+			break;
+		case SDLK_KP_PLUS: // R2
+			_pi.stateSlot = 1;
+			break;
+		case SDLK_KP_MINUS: // L2
+			_pi.stateSlot = -1;
+			break;
+		default:
+			break;
+		}
+		break;
+#endif
 	default:
 		break;
 	}

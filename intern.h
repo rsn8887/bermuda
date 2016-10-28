@@ -6,6 +6,12 @@
 #ifndef INTERN_H__
 #define INTERN_H__
 
+#ifdef PS3
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
+
 #include <cstdio>
 #include <cassert>
 #include <cstdlib>

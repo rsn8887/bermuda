@@ -11,7 +11,12 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #endif
+#ifdef PS3
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#define MAXPATHLEN 512
+#else
 #include <sys/param.h>
+#endif
 #include <unistd.h>
 #include "file.h"
 #include "fs.h"

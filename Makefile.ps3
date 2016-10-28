@@ -1,0 +1,74 @@
+CELL_MK_DIR = $(CELL_SDK)/samples/mk
+include $(CELL_MK_DIR)/sdk.makedef.mk
+
+SFO := $(PS3DEV)/bin/sfo.py
+PKG := $(PS3DEV)/bin/pkg.py
+PKG_GEO := $(PS3DEV)/bin/package_finalize
+SELF_NPDRM := $(PS3DEV)/bin/make_self_npdrm
+
+DEFINES = -DPS3 -DBERMUDA_POSIX -DBERMUDA_VORBIS
+
+SDL_CFLAGS = -I$(CELL_SDK)/target/ppu/include/SDL
+SDL_LIBS = -lSDL -L$(CELL_SDK)/target/ppu/lib -L$(CELL_SDK)/target/ppu/lib/PSGL/RSX/opt -lPSGLFX -lPSGL -lPSGLU -lm -lnet_stub -lfs_stub -lio_stub -lsysutil_stub -lsysmodule_stub -lgcm_cmd -lresc_stub -lgcm_sys_stub -laudio_stub -lz -lpthread -lspurs_stub -lmstreamThreadMP3
+SDL_LIBS += -lSDL_mixer -lvorbisfile -lvorbis -logg
+
+CXX = ppu-lv2-g++
+CXXFLAGS:= -g -O -Wall $(SDL_CFLAGS) $(DEFINES)
+
+SRCDIR = .
+OBJDIR = objs
+
+SRCS = avi_player.cpp bag.cpp decoder.cpp dialogue.cpp file.cpp fs.cpp game.cpp \
+	main.cpp mixer_sdl.cpp opcodes.cpp parser_dlg.cpp parser_scn.cpp random.cpp \
+	resource.cpp saveload.cpp staticres.cpp str.cpp systemstub_sdl.cpp util.cpp \
+	win16.cpp
+
+OBJS = $(SRCS:.cpp=.o)
+DEPS = $(SRCS:.cpp=.d)
+
+PPU_TARGET = bs3.elf
+PACKAGE_NAME = UP0001-BERMUDA00-0000000000000000
+PKG_TARGET = bs3.pkg
+
+all: $(OBJDIR) EBOOT.BIN $(PKG_TARGET)
+
+$(PPU_TARGET): $(addprefix $(OBJDIR)/, $(OBJS))
+	$(CXX) $(LDFLAGS) -o $@ $^ $(SDL_LIBS)
+
+$(OBJDIR):
+	@mkdir $(OBJDIR)
+
+$(OBJS_DIR)/%.o: $(addprefix $(SRCDIR)/, %.cpp)
+	$(CXX) $(CXXFLAGS) -MMD -c $< -o $@
+
+$(OBJS_DIR)/$(PPU_TARGET): $(PPU_TARGET)
+	@mkdir -p $(dir $(@))
+	$(PPU_STRIP) -s $< -o $@
+
+PS3_GAME/PARAM.SFO: sfo.xml
+	$(SFO) -f $< $@
+
+PS3_GAME/USRDIR/EBOOT.BIN: $(OBJS_DIR)/$(PPU_TARGET) PS3_GAME/PARAM.SFO
+	@mkdir -p $(dir $(@))
+	@mkdir -p $(dir $(@))/DATA
+	@mkdir -p $(dir $(@))/SAVES
+	@mkdir -p $(dir $(@))/MUSIC
+	$(SELF_NPDRM) $< $@ $(PACKAGE_NAME)
+
+$(PKG_TARGET): PS3_GAME/USRDIR/EBOOT.BIN
+	@echo generating package.
+	$(PKG) --contentid $(PACKAGE_NAME) PS3_GAME/ $@
+
+EBOOT.BIN: $(OBJS_DIR)/$(PPU_TARGET)    # to use in /app_home/PS3_GAME
+	@echo generating EBOOT.BIN to use in /app_home/PS3_GAME
+	oscetool -v --sce-type=SELF --compress-data=TRUE --skip-sections=TRUE \
+		--key-revision=10 --self-auth-id=1010000001000003 --self-add-shdrs=TRUE \
+		--self-vendor-id=01000002 --self-type=NPDRM \
+		--self-app-version=0001000000000000 --self-fw-version=0003006000000000 \
+		--np-license-type=FREE --np-content-id=$(PACKAGE_NAME) --np-app-type=EXEC \
+		--np-real-fname=EBOOT.BIN --encrypt $(PPU_TARGET) EBOOT.BIN
+
+clean:
+	rm -rf EBOOT.BIN PS3_GAME/PARAM.SFO PS3_GAME/USRDIR/EBOOT.BIN $(OBJS_DIR) $(PPU_TARGET) $(PKG_TARGET)
+
+-include $(DEPS)

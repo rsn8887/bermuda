@@ -54,9 +54,15 @@ static void mainLoop() {
 
 #undef main
 int main(int argc, char *argv[]) {
+#ifdef PS3
+	const char *dataPath = "/dev_hdd0/game/BERMUDA00/USRDIR/DATA";
+	const char *savePath = "/dev_hdd0/game/BERMUDA00/USRDIR/SAVES";
+	const char *musicPath = "/dev_hdd0/game/BERMUDA00/USRDIR/MUSIC";
+#else
 	const char *dataPath = "DATA";
 	const char *savePath = ".";
 	const char *musicPath = "MUSIC";
+#endif
 	for (int i = 1; i < argc; ++i) {
 		bool opt = false;
 		if (strlen(argv[i]) >= 2) {

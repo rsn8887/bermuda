@@ -6,6 +6,7 @@
 #ifndef RANDOM_H__
 #define RANDOM_H__
 
+#include <time.h>
 #include "intern.h"
 
 struct RandomGenerator {
