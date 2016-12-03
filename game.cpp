@@ -42,6 +42,7 @@ void Game::detectVersion() {
 }
 
 void Game::restart() {
+	clearSceneData(-1);
 	_mixer->stopAll();
 	_mixerSoundId = Mixer::kDefaultSoundId;
 	_mixerMusicId = Mixer::kDefaultSoundId;

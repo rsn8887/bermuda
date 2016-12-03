@@ -12,6 +12,7 @@ struct MixerSDL: Mixer {
 	static const int kChannels = 4;
 
 	bool _isOpen;
+	Mix_Chunk *_chunk;
 	Mix_Music *_music;
 	uint8_t *_musicBuf;
 
@@ -46,9 +47,13 @@ struct MixerSDL: Mixer {
 
 	virtual void playSound(File *f, int *id) {
 		debug(DBG_MIXER, "MixerSDL::playSound() path '%s'", f->_path);
-		Mix_Chunk *chunk = Mix_LoadWAV(f->_path);
-		if (chunk) {
-			*id = Mix_PlayChannel(-1, chunk, 0);
+		if (_chunk) {
+			Mix_FreeChunk(_chunk);
+			_chunk = 0;
+		}
+		_chunk = Mix_LoadWAV(f->_path);
+		if (_chunk) {
+			*id = Mix_PlayChannel(-1, _chunk, 0);
 		} else {
 			*id = -1;
 		}
@@ -73,11 +78,14 @@ struct MixerSDL: Mixer {
 	virtual void stopSound(int id) {
 		debug(DBG_MIXER, "MixerSDL::stopSound()");
 		Mix_HaltChannel(id);
-		// Mix_FreeChunk
+		if (_chunk) {
+			Mix_FreeChunk(_chunk);
+			_chunk = 0;
+		}
 	}
 
 	void loadMusic(File *f) {
-		uint8_t *_musicBuf = (uint8_t *)malloc(f->size());
+		_musicBuf = (uint8_t *)malloc(f->size());
 		if (_musicBuf) {
 			const int size = f->read(_musicBuf, f->size());
 			SDL_RWops *rw = SDL_RWFromConstMem(_musicBuf, size);
@@ -123,7 +131,7 @@ struct MixerSDL: Mixer {
 
 	virtual void stopAll() {
 		debug(DBG_MIXER, "MixerSDL::stopAll()");
-		Mix_HaltChannel(-1);
+		stopSound(-1);
 		stopMusic();
 	}
 };
